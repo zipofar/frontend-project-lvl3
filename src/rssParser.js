@@ -1,15 +1,17 @@
+import sanitizeHtml from 'sanitize-html';
+
 export default (xml) => {
   const rss = {
     title: null,
     description: null,
     items: [],
   };
-  rss.title = xml.querySelector('title').textContent;
-  rss.description = xml.querySelector('description').textContent;
+  rss.title = sanitizeHtml(xml.querySelector('title').textContent);
+  rss.description = sanitizeHtml(xml.querySelector('description').textContent);
   rss.items = [...xml.querySelectorAll('item')].map((e) => (
     {
-      title: e.querySelector('title').textContent,
-      link: e.querySelector('link').textContent,
+      title: sanitizeHtml(e.querySelector('title').textContent),
+      link: sanitizeHtml(e.querySelector('link').textContent),
     }
   ));
   return rss;
