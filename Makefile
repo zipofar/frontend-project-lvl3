@@ -4,5 +4,10 @@ dev:
 lint:
 	npx eslint .
 
-install-deps:
+install:
 	yarn install
+
+build:
+	rm -rf ./dist
+	NODE_ENV=production npx webpack
+	echo divergent-throat.surge.sh > ./dist/CNAME
