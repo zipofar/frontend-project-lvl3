@@ -12,28 +12,41 @@ const issetFeed = (feeds, uid) => (
   feeds.filter((e) => (e.uid === uid)).length > 0
 );
 
+const btnSubmitElIsDisabled = ({ ui }) => {
+  if (ui.stateRssForm === 'invalid'
+    || ui.stateRssForm === 'empty'
+    || ui.stateFetchFeed === 'request') {
+    return true;
+  }
+
+  return false;
+};
+
+const inputUrlElIsDisabled = ({ ui }) => (ui.stateFetchFeed === 'request');
+const inputUrlElIsValid = ({ ui }) => (ui.stateRssForm === 'valid');
+
 export default () => {
   const state = {
     ui: {
-      stateForm: 'empty',
+      stateRssForm: 'empty',
       stateFetchFeed: '',
-      errorFetchFeed: '',
+      errorRssForm: '',
+      currentValueRssUrl: '',
     },
     feeds: [],
   };
-  const feedsContainer = document.getElementById('feeds');
-  const formRss = document.getElementById('form-rss');
-  const inputUrl = document.getElementById('input-url');
-  const btnSubmit = document.getElementById('btn-add');
+  const feedsContainerEl = document.getElementById('feeds');
+  const formRssEl = document.getElementById('form-rss');
+  const inputUrlEl = document.getElementById('input-url');
+  const btnSubmitEl = document.getElementById('btn-add');
 
-  formRss.addEventListener('submit', (e) => {
+  formRssEl.addEventListener('submit', (e) => {
     e.preventDefault();
     state.ui.stateFetchFeed = '';
-    state.ui.errorFetchFeed = '';
+    state.ui.errorRssForm = '';
     state.ui.stateFetchFeed = 'request';
 
-    const formData = new FormData(formRss);
-    const rssUrl = formData.get('url');
+    const rssUrl = state.ui.currentValueRssUrl.replace(/\/*$/, '');
 
     axios.get(`${proxyAddress}${rssUrl}`)
       .then(({ data }) => {
@@ -44,67 +57,45 @@ export default () => {
 
         if (issetFeed(state.feeds, uid)) {
           state.ui.stateFetchFeed = 'failure';
-          state.ui.errorFetchFeed = 'Feed isset';
-          console.log(state.ui.errorFetchFeed);
+          state.ui.errorRssForm = 'Feed isset';
+          console.log(state.ui.errorRssForm);
           return;
         }
 
         rssFeed.uid = uid;
         state.feeds = [...state.feeds, rssFeed];
         state.ui.stateFetchFeed = 'success';
-        state.ui.stateForm = 'empty';
+        state.ui.stateRssForm = 'empty';
+        state.ui.currentValueRssUrl = '';
       })
       .catch((error) => {
         state.ui.stateFetchFeed = 'failure';
 
         if (error.response) {
           const { status } = error.response;
-          state.ui.errorFetchFeed = `Code ${status}`;
+          state.ui.errorRssForm = `Code ${status}`;
         } else {
-          state.ui.errorFetchFeed = 'Something went wrong';
+          state.ui.errorRssForm = 'Something went wrong';
         }
       });
   });
 
-  inputUrl.addEventListener('input', (e) => {
-    const { value } = e.target;
-    state.ui.stateForm = isUrl(value) ? 'valid' : 'invalid';
-    state.ui.inputValue = value;
+  inputUrlEl.addEventListener('input', ({ target: { value } }) => {
+    state.ui.stateRssForm = isUrl(value) ? 'valid' : 'invalid';
+    state.ui.currentValueRssUrl = value;
   });
 
+
   watch(state, 'ui', () => {
-    if (state.ui.stateForm === 'invalid') {
-      inputUrl.classList.add('is-invalid');
-      btnSubmit.disabled = true;
-    }
-
-    if (state.ui.stateForm === 'empty') {
-      btnSubmit.disabled = true;
-    }
-
-    if (state.ui.stateForm === 'valid') {
-      inputUrl.classList.remove('is-invalid');
-      btnSubmit.disabled = false;
-    }
-
-    if (state.ui.stateFetchFeed === 'request') {
-      btnSubmit.disabled = true;
-      inputUrl.disabled = true;
-    }
-
-    if (state.ui.stateFetchFeed === 'success') {
-      inputUrl.value = '';
-      inputUrl.disabled = false;
-    }
-
-    if (state.ui.stateFetchFeed === 'failure') {
-      inputUrl.disabled = false;
-    }
+    btnSubmitEl.disabled = btnSubmitElIsDisabled(state);
+    inputUrlEl.disabled = inputUrlElIsDisabled(state);
+    inputUrlEl.classList.toggle('is-invalid', !inputUrlElIsValid(state));
   });
 
   watch(state, 'feeds', () => {
     const { feeds } = state;
     const htmlFeeds = feeds.map((e) => feedBuilder(e)).join('');
-    feedsContainer.innerHTML = htmlFeeds;
+    feedsContainerEl.innerHTML = htmlFeeds;
+    inputUrlEl.value = state.ui.currentValueRssUrl;
   });
 };
