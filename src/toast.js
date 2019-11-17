@@ -1,11 +1,10 @@
 import Toast from 'bootstrap/js/dist/toast';
 
-export default (props) => {
+export default (props, closeHandler) => {
   const {
     title,
     message,
     parentEl,
-    state,
   } = props;
 
   const attributes = {
@@ -32,9 +31,9 @@ export default (props) => {
   toastEl.innerHTML = toastBody;
   parentEl.appendChild(toastEl);
 
-  const btnCloseEl = toastEl.children[0].children[1];
+  const btnCloseEl = toastEl.querySelector('button');
   btnCloseEl.onclick = () => {
-    state.ui.showToast = false;
+    closeHandler();
     toastEl.remove();
   };
 

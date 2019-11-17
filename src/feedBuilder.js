@@ -1,5 +1,13 @@
 const itemsBuilder = (items) => {
-  const list = items.map((e) => (`<li><a href='${e.link}'>${e.title}</a></li>`)).join('');
+  const list = items.map((e) => (
+    `
+    <li>
+      <a href='${e.link}'>
+        ${e.title}
+      </a>
+      <button type="button" class="btn btn-outline-secondary btn-sm">...</button>
+    </li>
+    `)).join('');
   return list.length > 0 ? `<ul>${list}</ul>` : '';
 };
 

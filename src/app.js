@@ -23,6 +23,7 @@ const btnSubmitElIsDisabled = ({ ui }) => {
   return false;
 };
 
+const toastBtnCloseHandler = (state) => () => { state.ui.showToast = false; };
 const inputUrlElIsDisabled = ({ ui }) => (ui.stateFetchFeed === 'request');
 const inputUrlElIsValid = ({ ui }) => (
   ui.stateRssForm === 'valid' || ui.stateRssForm === 'empty'
@@ -105,8 +106,8 @@ export default () => {
         title: 'Error',
         message: state.ui.errorRssForm,
         parentEl: toastContainerEl,
-        state,
-      });
+      },
+      toastBtnCloseHandler(state));
     }
   });
 
