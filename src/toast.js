@@ -1,7 +1,13 @@
 import Toast from 'bootstrap/js/dist/toast';
 
 export default (props) => {
-  const { title, message, parentEl, state } = props;
+  const {
+    title,
+    message,
+    parentEl,
+    state,
+  } = props;
+
   const attributes = {
     role: 'alert',
     'aria-live': 'assertive',
