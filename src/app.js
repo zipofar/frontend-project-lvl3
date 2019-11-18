@@ -128,6 +128,7 @@ export default () => {
   });
 
   watch(state, 'feeds', () => {
+    console.log(state.feeds)
     const { feeds } = state;
     rssFeeds(feeds, feedsContainerEl, { modalShow: modalShowHandler(state) });
     inputUrlEl.value = state.ui.currentValueRssUrl;
