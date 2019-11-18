@@ -14,23 +14,12 @@ const issetFeed = (feeds, uid) => (
   feeds.filter((e) => (e.uid === uid)).length > 0
 );
 
-const btnSubmitElIsDisabled = ({ ui }) => {
-  if (ui.stateRssForm === 'invalid'
-    || ui.stateRssForm === 'empty'
-    || ui.stateFetchFeed === 'request') {
-    return true;
-  }
-
-  return false;
-};
-
 const toastBtnCloseHandler = (state) => () => { state.ui.showToast = false; };
 const modalCloseHandler = (state) => () => { state.ui.showModal = false; };
 const modalShowHandler = (state) => (data) => () => {
   state.ui.showModal = true;
   state.ui.dataModal = data;
 };
-const inputUrlElIsDisabled = ({ ui }) => (ui.stateFetchFeed === 'request');
 const inputUrlElIsValid = ({ ui }) => (
   ui.stateRssForm === 'valid' || ui.stateRssForm === 'empty'
 );
@@ -40,6 +29,8 @@ export default () => {
     ui: {
       stateRssForm: 'empty',
       stateFetchFeed: '',
+      stateSubmitBtn: 'disabled',
+      stateInputUrl: 'enabled',
       errorRssForm: '',
       currentValueRssUrl: '',
       showToast: false,
@@ -58,6 +49,8 @@ export default () => {
   formRssEl.addEventListener('submit', (e) => {
     e.preventDefault();
     state.ui.stateFetchFeed = '';
+    state.ui.stateSubmitBtn = 'disabled';
+    state.ui.stateInputUrl = 'disabled';
     state.ui.errorRssForm = '';
     state.ui.stateFetchFeed = 'request';
     state.ui.showToast = false;
@@ -68,6 +61,8 @@ export default () => {
     if (issetFeed(state.feeds, uid)) {
       state.ui.errorRssForm = 'Feed isset';
       state.ui.stateFetchFeed = 'success';
+      state.ui.stateSubmitBtn = 'enabled';
+      state.ui.stateInputUrl = 'enabled';
       state.ui.showToast = true;
       console.log(state.ui.errorRssForm);
       return;
@@ -78,6 +73,8 @@ export default () => {
         state.ui.stateFetchFeed = 'success';
         state.ui.stateRssForm = 'empty';
         state.ui.currentValueRssUrl = '';
+        state.ui.stateSubmitBtn = 'disabled';
+        state.ui.stateInputUrl = 'enabled';
 
         const domparser = new DOMParser();
         const domXml = domparser.parseFromString(data, 'text/xml');
@@ -87,6 +84,8 @@ export default () => {
       })
       .catch((error) => {
         state.ui.stateFetchFeed = 'failure';
+        state.ui.stateSubmitBtn = 'enabled';
+        state.ui.stateInputUrl = 'enabled';
 
         if (error.response) {
           const { status } = error.response;
@@ -100,14 +99,20 @@ export default () => {
   });
 
   inputUrlEl.addEventListener('input', ({ target: { value } }) => {
+    const isValidUrl = isUrl(value);
     state.ui.currentValueRssUrl = value;
-    state.ui.stateRssForm = isUrl(value) ? 'valid' : 'invalid';
+    state.ui.stateRssForm = isValidUrl ? 'valid' : 'invalid';
+
+    if (!isValidUrl || value === '') {
+      state.ui.stateSubmitBtn = 'disabled';
+    } else {
+      state.ui.stateSubmitBtn = 'enabled';
+    }
   });
 
-
   watch(state, 'ui', (prop, action, newvalue, oldvalue) => {
-    btnSubmitEl.disabled = btnSubmitElIsDisabled(state);
-    inputUrlEl.disabled = inputUrlElIsDisabled(state);
+    btnSubmitEl.disabled = state.ui.stateSubmitBtn === 'disabled';
+    inputUrlEl.disabled = state.ui.stateInputUrl === 'disabled';
     inputUrlEl.classList.toggle('is-invalid', !inputUrlElIsValid(state));
 
     if (prop === 'showToast' && oldvalue === false && newvalue === true) {
@@ -118,6 +123,7 @@ export default () => {
       },
       toastBtnCloseHandler(state));
     }
+
     if (prop === 'showModal' && oldvalue === false && newvalue === true) {
       Modal({
         ...state.ui.dataModal,
@@ -128,7 +134,6 @@ export default () => {
   });
 
   watch(state, 'feeds', () => {
-    console.log(state.feeds)
     const { feeds } = state;
     rssFeeds(feeds, feedsContainerEl, { modalShow: modalShowHandler(state) });
     inputUrlEl.value = state.ui.currentValueRssUrl;
