@@ -2,9 +2,10 @@ import axios from 'axios';
 import isUrl from 'validator/lib/isURL';
 import { watch } from 'melanke-watchjs';
 import hash from 'hash.js';
-import feedBuilder from './feedBuilder';
+import rssFeeds from './rssFeeds';
 import rssParser from './rssParser';
 import Toast from './toast';
+import Modal from './modal';
 
 // const proxyAddress = 'https://crossorigin.me/';
 const proxyAddress = 'https://api.codetabs.com/v1/proxy?quest=';
@@ -24,6 +25,11 @@ const btnSubmitElIsDisabled = ({ ui }) => {
 };
 
 const toastBtnCloseHandler = (state) => () => { state.ui.showToast = false; };
+const modalCloseHandler = (state) => () => { state.ui.showModal = false; };
+const modalShowHandler = (state) => (data) => () => {
+  state.ui.showModal = true;
+  state.ui.dataModal = data;
+};
 const inputUrlElIsDisabled = ({ ui }) => (ui.stateFetchFeed === 'request');
 const inputUrlElIsValid = ({ ui }) => (
   ui.stateRssForm === 'valid' || ui.stateRssForm === 'empty'
@@ -37,9 +43,12 @@ export default () => {
       errorRssForm: '',
       currentValueRssUrl: '',
       showToast: false,
+      showModal: false,
+      dataModal: {},
     },
     feeds: [],
   };
+  const bodyEl = document.querySelector('body');
   const toastContainerEl = document.getElementById('toast-container');
   const feedsContainerEl = document.getElementById('feeds');
   const formRssEl = document.getElementById('form-rss');
@@ -54,6 +63,15 @@ export default () => {
     state.ui.showToast = false;
 
     const rssUrl = state.ui.currentValueRssUrl.replace(/\/*$/, '');
+    const uid = hash.sha1().update(rssUrl).digest('hex');
+
+    if (issetFeed(state.feeds, uid)) {
+      state.ui.errorRssForm = 'Feed isset';
+      state.ui.stateFetchFeed = 'success';
+      state.ui.showToast = true;
+      console.log(state.ui.errorRssForm);
+      return;
+    }
 
     axios.get(`${proxyAddress}${rssUrl}`)
       .then(({ data }) => {
@@ -63,17 +81,8 @@ export default () => {
 
         const domparser = new DOMParser();
         const domXml = domparser.parseFromString(data, 'text/xml');
-        const rssFeed = rssParser(domXml);
-        const uid = hash.sha1().update(rssUrl).digest('hex');
+        const rssFeed = rssParser(domXml, uid);
 
-        if (issetFeed(state.feeds, uid)) {
-          state.ui.errorRssForm = 'Feed isset';
-          state.ui.showToast = true;
-          console.log(state.ui.errorRssForm);
-          return;
-        }
-
-        rssFeed.uid = uid;
         state.feeds = [...state.feeds, rssFeed];
       })
       .catch((error) => {
@@ -109,12 +118,18 @@ export default () => {
       },
       toastBtnCloseHandler(state));
     }
+    if (prop === 'showModal' && oldvalue === false && newvalue === true) {
+      Modal({
+        ...state.ui.dataModal,
+        parentEl: bodyEl,
+      },
+      modalCloseHandler(state));
+    }
   });
 
   watch(state, 'feeds', () => {
     const { feeds } = state;
-    const htmlFeeds = feeds.map((e) => feedBuilder(e)).join('');
-    feedsContainerEl.innerHTML = htmlFeeds;
+    rssFeeds(feeds, feedsContainerEl, { modalShow: modalShowHandler(state) });
     inputUrlEl.value = state.ui.currentValueRssUrl;
   });
 };

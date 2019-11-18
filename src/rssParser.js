@@ -1,7 +1,8 @@
 import sanitizeHtml from 'sanitize-html';
 
-export default (xml) => {
+export default (xml, uid) => {
   const rss = {
+    uid,
     title: null,
     description: null,
     items: [],
@@ -12,6 +13,7 @@ export default (xml) => {
     {
       title: sanitizeHtml(e.querySelector('title').textContent),
       link: sanitizeHtml(e.querySelector('link').textContent),
+      description: sanitizeHtml(e.querySelector('description').textContent),
     }
   ));
   return rss;
