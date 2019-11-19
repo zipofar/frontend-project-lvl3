@@ -5,35 +5,38 @@ const proxyAddress = 'https://api.codetabs.com/v1/proxy?quest=';
 const startInterval = 2000;
 const deltaInterval = 2000;
 
-const getNewItemsFromFeed = (newItems, oldItems) => {
-  return newItems.filter(({ uid: uidInNew }) => {
-    return oldItems.filter(({ uid: uidInOld }) => (uidInNew === uidInOld)).length < 1;
-  });
-};
+const getNewItemsFromFeed = (newItems, oldItems) => (
+  newItems.filter(({ uid: uidInNew }) => (
+    oldItems.filter(({ uid: uidInOld }) => (uidInNew === uidInOld)).length < 1
+  ))
+);
 
 const intervalFetch = (state, currentFeed, interval) => {
   setTimeout(() => {
     const { url, uid } = currentFeed;
-    const { uiIntervalProcess } = state;
+    const { failedFetchUidFeeds } = state;
 
     axios.get(`${proxyAddress}${url}`)
       .then(({ data }) => {
-        uiIntervalProcess.stateFetchFeeds = { ...uiIntervalProcess.stateFetchFeeds, [uid]: 'success' };
-
-        const domparser = new DOMParser();
-        const domXml = domparser.parseFromString(data, 'text/xml');
-        const newFeed = rssParser(domXml);
+        if (failedFetchUidFeeds.includes(uid)) {
+          state.failedFetchUidFeeds = failedFetchUidFeeds.filter((e) => (e !== uid));
+        }
+        const newFeed = rssParser(data);
         const newItems = getNewItemsFromFeed(newFeed.items, currentFeed.items);
         if (newItems.length > 0) {
           currentFeed.items = [...currentFeed.items, ...newItems];
         }
+
         intervalFetch(state, currentFeed, startInterval);
       })
       .catch(() => {
         const newInterval = interval + deltaInterval;
         console.log(`Error fetch feed ${currentFeed.url}, new interval = ${newInterval}`);
+        if (!failedFetchUidFeeds.includes(uid)) {
+          state.failedFetchUidFeeds = [...failedFetchUidFeeds, uid];
+        }
+
         intervalFetch(state, currentFeed, newInterval);
-        uiIntervalProcess.stateFetchFeeds = { ...uiIntervalProcess.stateFetchFeeds, [uid]: 'failure' };
       });
   }, interval);
 };

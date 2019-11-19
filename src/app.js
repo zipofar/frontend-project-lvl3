@@ -7,6 +7,7 @@ import rssParser from './rssParser';
 import Toast from './toast';
 import Modal from './modal';
 import startFeedAutoUpdater from './rssFeedUpdater';
+import alert from './alertPanelMain';
 
 // const proxyAddress = 'https://crossorigin.me/';
 const proxyAddress = 'https://api.codetabs.com/v1/proxy?quest=';
@@ -39,10 +40,8 @@ export default () => {
       showModal: false,
       dataModal: {},
     },
-    uiIntervalProcess: {
-      stateFetchFeeds: {}, // {[uid]: 'success'}
-    },
     feeds: [],
+    failedFetchUidFeeds: [],
   };
   const bodyEl = document.querySelector('body');
   const toastContainerEl = document.getElementById('toast-container');
@@ -50,6 +49,7 @@ export default () => {
   const formRssEl = document.getElementById('form-rss');
   const inputUrlEl = document.getElementById('input-url');
   const btnSubmitEl = document.getElementById('btn-add');
+  const containerAlertPanelMain = document.getElementById('container-alert');
 
   formRssEl.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -81,9 +81,7 @@ export default () => {
         state.ui.stateSubmitBtn = 'disabled';
         state.ui.stateInputUrl = 'enabled';
 
-        const domparser = new DOMParser();
-        const domXml = domparser.parseFromString(data, 'text/xml');
-        const rssFeed = rssParser(domXml);
+        const rssFeed = rssParser(data);
         rssFeed.uid = feedUid;
         rssFeed.url = rssUrl;
 
@@ -147,12 +145,10 @@ export default () => {
     inputUrlEl.value = state.ui.currentValueRssUrl;
   });
 
-  watch(state, 'uiIntervalProcess', () => {
-    const { stateFetchFeeds } = state.uiIntervalProcess;
-    Object.keys(stateFetchFeeds).forEach((uid) => {
-      if (stateFetchFeeds[uid] === 'failure') {
-        console.log(`Feed ${uid} is FAILURE`);
-      }
-    });
+  watch(state, 'failedFetchUidFeeds', () => {
+    const { failedFetchUidFeeds } = state;
+    if (failedFetchUidFeeds.length > 0) {
+      alert({ state, failedFetchUidFeeds, parentEl: containerAlertPanelMain });
+    }
   });
 };
