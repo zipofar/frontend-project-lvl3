@@ -9,9 +9,9 @@ export default (props, closeHandler) => {
 
   const attributes = {
     role: 'alert',
+    class: 'toast',
     'aria-live': 'assertive',
     'aria-atomic': 'true',
-    class: 'toast',
     'data-autohide': 'false',
   };
   const toastBody = `

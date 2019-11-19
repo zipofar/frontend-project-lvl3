@@ -2,17 +2,14 @@ import axios from 'axios';
 import isUrl from 'validator/lib/isURL';
 import { watch } from 'melanke-watchjs';
 import hash from 'hash.js';
-import rssFeeds from './rssFeeds';
+import rssFeeds from './components/rssFeeds';
 import rssParser from './rssParser';
-import Toast from './toast';
-import Modal from './modal';
+import Toast from './components/toast';
+import Modal from './components/modal';
 import startFeedAutoUpdater from './rssFeedUpdater';
-import alert from './alertPanelMain';
+import alert from './components/alertPanelMain';
 
-const issetFeed = (feeds, uid) => (
-  feeds.filter((e) => (e.uid === uid)).length > 0
-);
-
+const issetFeed = (feeds, uid) => (feeds.filter((e) => (e.uid === uid)).length > 0);
 const toastBtnCloseHandler = (state) => () => { state.ui.showToast = false; };
 const modalCloseHandler = (state) => () => { state.ui.showModal = false; };
 const modalShowHandler = (state) => (data) => () => {
@@ -115,14 +112,20 @@ export default (config) => {
   });
 
   watch(state, 'ui', (prop, action, newvalue, oldvalue) => {
-    btnSubmitEl.disabled = state.ui.stateSubmitBtn === 'disabled';
-    inputUrlEl.disabled = state.ui.stateInputUrl === 'disabled';
+    const {
+      stateSubmitBtn,
+      stateInputUrl,
+      dataModal,
+      errorRssForm,
+    } = state.ui;
+    btnSubmitEl.disabled = stateSubmitBtn === 'disabled';
+    inputUrlEl.disabled = stateInputUrl === 'disabled';
     inputUrlEl.classList.toggle('is-invalid', !inputUrlElIsValid(state));
 
     if (prop === 'showToast' && oldvalue === false && newvalue === true) {
       Toast({
         title: 'Error',
-        message: state.ui.errorRssForm,
+        message: errorRssForm,
         parentEl: toastContainerEl,
       },
       toastBtnCloseHandler(state));
@@ -130,7 +133,7 @@ export default (config) => {
 
     if (prop === 'showModal' && oldvalue === false && newvalue === true) {
       Modal({
-        ...state.ui.dataModal,
+        ...dataModal,
         parentEl: bodyEl,
       },
       modalCloseHandler(state));
