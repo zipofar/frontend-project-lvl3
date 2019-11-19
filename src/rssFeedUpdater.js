@@ -1,7 +1,6 @@
 import axios from 'axios';
 import rssParser from './rssParser';
 
-const proxyAddress = 'https://api.codetabs.com/v1/proxy?quest=';
 const startInterval = 2000;
 const deltaInterval = 2000;
 
@@ -11,12 +10,12 @@ const getNewItemsFromFeed = (newItems, oldItems) => (
   ))
 );
 
-const intervalFetch = (state, currentFeed, interval) => {
+const intervalFetch = (state, currentFeed, interval, proxyUrl) => {
   setTimeout(() => {
     const { url, uid } = currentFeed;
     const { failedFetchUidFeeds } = state;
 
-    axios.get(`${proxyAddress}${url}`)
+    axios.get(`${proxyUrl}${url}`)
       .then(({ data }) => {
         if (failedFetchUidFeeds.includes(uid)) {
           state.failedFetchUidFeeds = failedFetchUidFeeds.filter((e) => (e !== uid));
@@ -41,8 +40,9 @@ const intervalFetch = (state, currentFeed, interval) => {
   }, interval);
 };
 
-export default (state, feedUid) => {
+export default (state, feedUid, opts) => {
   const { feeds } = state;
+  const { proxyUrl } = opts;
   const currentFeed = feeds.filter(({ uid }) => (uid === feedUid))[0];
-  intervalFetch(state, currentFeed, startInterval);
+  intervalFetch(state, currentFeed, startInterval, proxyUrl);
 };

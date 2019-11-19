@@ -9,9 +9,6 @@ import Modal from './modal';
 import startFeedAutoUpdater from './rssFeedUpdater';
 import alert from './alertPanelMain';
 
-// const proxyAddress = 'https://crossorigin.me/';
-const proxyAddress = 'https://api.codetabs.com/v1/proxy?quest=';
-
 const issetFeed = (feeds, uid) => (
   feeds.filter((e) => (e.uid === uid)).length > 0
 );
@@ -27,7 +24,8 @@ const inputUrlElIsValid = ({ ui }) => (
   ui.stateRssForm === 'valid' || ui.stateRssForm === 'empty'
 );
 
-export default () => {
+export default (config) => {
+  const { proxyUrl } = config;
   const state = {
     ui: {
       stateRssForm: 'empty',
@@ -73,7 +71,7 @@ export default () => {
       return;
     }
 
-    axios.get(`${proxyAddress}${rssUrl}`)
+    axios.get(`${proxyUrl}${rssUrl}`)
       .then(({ data }) => {
         state.ui.stateFetchFeed = 'success';
         state.ui.stateRssForm = 'empty';
@@ -86,7 +84,7 @@ export default () => {
         rssFeed.url = rssUrl;
 
         state.feeds = [...state.feeds, rssFeed];
-        startFeedAutoUpdater(state, feedUid);
+        startFeedAutoUpdater(state, feedUid, { proxyUrl });
       })
       .catch((error) => {
         state.ui.stateFetchFeed = 'failure';
