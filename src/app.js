@@ -6,6 +6,7 @@ import rssFeeds from './rssFeeds';
 import rssParser from './rssParser';
 import Toast from './toast';
 import Modal from './modal';
+import startFeedAutoUpdater from './rssFeedUpdater';
 
 // const proxyAddress = 'https://crossorigin.me/';
 const proxyAddress = 'https://api.codetabs.com/v1/proxy?quest=';
@@ -20,6 +21,7 @@ const modalShowHandler = (state) => (data) => () => {
   state.ui.showModal = true;
   state.ui.dataModal = data;
 };
+
 const inputUrlElIsValid = ({ ui }) => (
   ui.stateRssForm === 'valid' || ui.stateRssForm === 'empty'
 );
@@ -36,6 +38,9 @@ export default () => {
       showToast: false,
       showModal: false,
       dataModal: {},
+    },
+    uiIntervalProcess: {
+      stateFetchFeeds: {}, // {[uid]: 'success'}
     },
     feeds: [],
   };
@@ -56,9 +61,9 @@ export default () => {
     state.ui.showToast = false;
 
     const rssUrl = state.ui.currentValueRssUrl.replace(/\/*$/, '');
-    const uid = hash.sha1().update(rssUrl).digest('hex');
+    const feedUid = hash.sha1().update(rssUrl).digest('hex');
 
-    if (issetFeed(state.feeds, uid)) {
+    if (issetFeed(state.feeds, feedUid)) {
       state.ui.errorRssForm = 'Feed isset';
       state.ui.stateFetchFeed = 'success';
       state.ui.stateSubmitBtn = 'enabled';
@@ -78,9 +83,12 @@ export default () => {
 
         const domparser = new DOMParser();
         const domXml = domparser.parseFromString(data, 'text/xml');
-        const rssFeed = rssParser(domXml, uid);
+        const rssFeed = rssParser(domXml);
+        rssFeed.uid = feedUid;
+        rssFeed.url = rssUrl;
 
         state.feeds = [...state.feeds, rssFeed];
+        startFeedAutoUpdater(state, feedUid);
       })
       .catch((error) => {
         state.ui.stateFetchFeed = 'failure';
@@ -137,5 +145,14 @@ export default () => {
     const { feeds } = state;
     rssFeeds(feeds, feedsContainerEl, { modalShow: modalShowHandler(state) });
     inputUrlEl.value = state.ui.currentValueRssUrl;
+  });
+
+  watch(state, 'uiIntervalProcess', () => {
+    const { stateFetchFeeds } = state.uiIntervalProcess;
+    Object.keys(stateFetchFeeds).forEach((uid) => {
+      if (stateFetchFeeds[uid] === 'failure') {
+        console.log(`Feed ${uid} is FAILURE`);
+      }
+    });
   });
 };
