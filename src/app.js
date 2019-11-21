@@ -3,80 +3,66 @@ import isUrl from 'validator/lib/isURL';
 import { watch } from 'melanke-watchjs';
 import hash from 'hash.js';
 import rssFeeds from './components/rssFeeds';
-import rssParser from './rssParser';
-import Toast from './components/toast';
+import rssParse from './rssParser';
 import Modal from './components/modal';
 import startFeedAutoUpdater from './rssFeedUpdater';
 import alert from './components/alertPanelMain';
 
 const issetFeed = (feeds, uid) => (feeds.filter((e) => (e.uid === uid)).length > 0);
-const toastBtnCloseHandler = (state) => () => { state.ui.showToast = false; };
-const modalCloseHandler = (state) => () => { state.ui.showModal = false; };
+const modalCloseHandler = (state) => () => { state.showDescriptionFeedItem.show = false; };
 const modalShowHandler = (state) => (data) => () => {
-  state.ui.showModal = true;
-  state.ui.dataModal = data;
+  state.showDescriptionFeedItem.show = true;
+  state.showDescriptionFeedItem.data = data;
 };
-
-const inputUrlElIsValid = ({ ui }) => (
-  ui.stateRssForm === 'valid' || ui.stateRssForm === 'empty'
-);
 
 export default (config) => {
   const { proxyUrl } = config;
   const state = {
-    ui: {
-      stateRssForm: 'empty',
-      stateFetchFeed: '',
-      stateSubmitBtn: 'disabled',
-      stateInputUrl: 'enabled',
-      errorRssForm: '',
-      currentValueRssUrl: '',
-      showToast: false,
-      showModal: false,
-      dataModal: {},
+    additionProcess: {
+      errors: [],
+      stateProcess: 'filling', // filling, processed, finished
+      validationState: 'none', // none, invalid, valid
+    },
+    showDescriptionFeedItem: {
+      show: false,
+      data: {},
     },
     feeds: [],
     failedFetchUidFeeds: [],
   };
   const bodyEl = document.querySelector('body');
-  const toastContainerEl = document.getElementById('toast-container');
   const feedsContainerEl = document.getElementById('feeds');
   const formRssEl = document.getElementById('form-rss');
+  const formRssFeedBackEl = document.getElementById('form-rss-feedback');
   const inputUrlEl = document.getElementById('input-url');
   const btnSubmitEl = document.getElementById('btn-add');
   const containerAlertPanelMain = document.getElementById('container-alert');
 
   formRssEl.addEventListener('submit', (e) => {
     e.preventDefault();
-    state.ui.stateFetchFeed = '';
-    state.ui.stateSubmitBtn = 'disabled';
-    state.ui.stateInputUrl = 'disabled';
-    state.ui.errorRssForm = '';
-    state.ui.stateFetchFeed = 'request';
-    state.ui.showToast = false;
+    state.additionProcess.stateProcess = 'processed';
+    state.additionProcess.errors = [];
 
-    const rssUrl = state.ui.currentValueRssUrl.replace(/\/*$/, '');
+    const formData = new FormData(formRssEl);
+    const rssUrl = formData.get('url').replace(/\/*$/, '');
     const feedUid = hash.sha1().update(rssUrl).digest('hex');
 
     if (issetFeed(state.feeds, feedUid)) {
-      state.ui.errorRssForm = 'Feed isset';
-      state.ui.stateFetchFeed = 'success';
-      state.ui.stateSubmitBtn = 'enabled';
-      state.ui.stateInputUrl = 'enabled';
-      state.ui.showToast = true;
-      console.log(state.ui.errorRssForm);
+      state.additionProcess.stateProcess = 'finished';
+      state.additionProcess.validationState = 'invalid';
+      state.additionProcess.errors = [
+        ...state.additionProcess.errors,
+        'Rss feed already exists',
+      ];
       return;
     }
 
     axios.get(`${proxyUrl}${rssUrl}`)
       .then(({ data }) => {
-        state.ui.stateFetchFeed = 'success';
-        state.ui.stateRssForm = 'empty';
-        state.ui.currentValueRssUrl = '';
-        state.ui.stateSubmitBtn = 'disabled';
-        state.ui.stateInputUrl = 'enabled';
+        state.additionProcess.validationState = 'none';
+        state.additionProcess.stateProcess = 'finished';
 
-        const rssFeed = rssParser(data);
+        const rssFeed = rssParse(data);
         rssFeed.uid = feedUid;
         rssFeed.url = rssUrl;
 
@@ -84,57 +70,76 @@ export default (config) => {
         startFeedAutoUpdater(state, feedUid, { proxyUrl });
       })
       .catch((error) => {
-        state.ui.stateFetchFeed = 'failure';
-        state.ui.stateSubmitBtn = 'enabled';
-        state.ui.stateInputUrl = 'enabled';
+        state.additionProcess.stateProcess = 'finished';
 
         if (error.response) {
           const { status } = error.response;
-          state.ui.errorRssForm = `Code ${status}`;
-          state.ui.showToast = true;
+          state.additionProcess.errors = [
+            ...state.additionProcess.errors,
+            `Response Code  ${status}`,
+          ];
         } else {
-          state.ui.errorRssForm = 'Something went wrong';
-          state.ui.showToast = true;
+          state.additionProcess.errors = [
+            ...state.additionProcess.errors,
+            'Something went wrong',
+          ];
         }
       });
   });
 
   inputUrlEl.addEventListener('input', ({ target: { value } }) => {
-    const isValidUrl = isUrl(value);
-    state.ui.currentValueRssUrl = value;
-    state.ui.stateRssForm = isValidUrl ? 'valid' : 'invalid';
-
-    if (!isValidUrl || value === '') {
-      state.ui.stateSubmitBtn = 'disabled';
+    state.additionProcess.stateProcess = 'filling';
+    if (isUrl(value)) {
+      state.additionProcess.validationState = 'valid';
+    } else if (value === '') {
+      state.additionProcess.validationState = 'none';
     } else {
-      state.ui.stateSubmitBtn = 'enabled';
+      state.additionProcess.validationState = 'invalid';
     }
   });
 
-  watch(state, 'ui', (prop, action, newvalue, oldvalue) => {
+  watch(state, 'additionProcess', () => {
     const {
-      stateSubmitBtn,
-      stateInputUrl,
-      dataModal,
-      errorRssForm,
-    } = state.ui;
+      errors,
+      stateProcess,
+      validationState,
+    } = state.additionProcess;
 
-    btnSubmitEl.disabled = stateSubmitBtn === 'disabled';
-    inputUrlEl.disabled = stateInputUrl === 'disabled';
-    inputUrlEl.classList.toggle('is-invalid', !inputUrlElIsValid(state));
-
-    if (prop === 'showToast' && oldvalue === false && newvalue === true) {
-      Toast({
-        title: 'Error',
-        message: errorRssForm,
-        parentEl: toastContainerEl,
-      },
-      toastBtnCloseHandler(state));
+    if (stateProcess === 'filling' || stateProcess === 'finished') {
+      inputUrlEl.disabled = false;
+    } else if (stateProcess === 'processed') {
+      inputUrlEl.disabled = true;
     }
 
-    if (prop === 'showModal' && oldvalue === false && newvalue === true) {
+    if (stateProcess === 'finished' && errors.length === 0) {
+      inputUrlEl.value = '';
+      formRssFeedBackEl.classList.remove('invalid-feedback');
+      formRssFeedBackEl.innerHTML = '';
+    } else if (stateProcess === 'finished' && errors.length > 0) {
+      formRssFeedBackEl.innerHTML = errors.join('; ');
+      formRssFeedBackEl.classList.add('invalid-feedback');
+    }
+
+    if (validationState === 'none') {
+      inputUrlEl.classList.remove('is-invalid');
+      inputUrlEl.classList.remove('is-valid');
+      btnSubmitEl.disabled = true;
+    } else if (validationState === 'valid') {
+      inputUrlEl.classList.remove('is-invalid');
+      inputUrlEl.classList.add('is-valid');
+      btnSubmitEl.disabled = false;
+    } else if (validationState === 'invalid') {
+      inputUrlEl.classList.add('is-invalid');
+      inputUrlEl.classList.remove('is-valid');
+      btnSubmitEl.disabled = true;
+    }
+  });
+
+  watch(state, 'showDescriptionFeedItem', (prop, action, newvalue, oldvalue) => {
+    const { data } = state.showDescriptionFeedItem;
+    if (prop === 'show' && oldvalue === false && newvalue === true) {
       Modal({
-        ...dataModal,
+        ...data,
         parentEl: bodyEl,
       },
       modalCloseHandler(state));
@@ -144,7 +149,6 @@ export default (config) => {
   watch(state, 'feeds', () => {
     const { feeds } = state;
     rssFeeds(feeds, feedsContainerEl, { modalShow: modalShowHandler(state) });
-    inputUrlEl.value = state.ui.currentValueRssUrl;
   });
 
   watch(state, 'failedFetchUidFeeds', () => {
