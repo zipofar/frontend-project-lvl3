@@ -118,6 +118,7 @@ export default (config) => {
       dataModal,
       errorRssForm,
     } = state.ui;
+
     btnSubmitEl.disabled = stateSubmitBtn === 'disabled';
     inputUrlEl.disabled = stateInputUrl === 'disabled';
     inputUrlEl.classList.toggle('is-invalid', !inputUrlElIsValid(state));
