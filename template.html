@@ -14,7 +14,15 @@
             <div class="collapse navbar-collapse" id="navbarCollapse">
               <form class="form-inline w-100" id="form-rss">
                 <input class="form-control mr-sm-2 flex-grow-1" id="input-url" type="text" placeholder="Enter Url" aria-label="url" name='url'>
-                <button class="btn btn-outline-success my-2 my-sm-0" disabled id="btn-add" type="submit">Add</button>
+                <button
+                  class="btn btn-outline-success my-2 my-sm-0"
+                  disabled
+                  id="btn-add"
+                  type="submit"
+                >
+                  <span class="spinner-border spinner-border-sm d-none" id="btn-submit-spinner" role="status" aria-hidden="true"></span>
+                  <span id="btn-submit-text">Add</span>
+                </button>
                 <div id="form-rss-feedback"></div>
               </form>
             </div>

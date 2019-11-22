@@ -44,6 +44,8 @@ export default (config) => {
   const formRssFeedBackEl = document.getElementById('form-rss-feedback');
   const inputUrlEl = document.getElementById('input-url');
   const btnSubmitEl = document.getElementById('btn-add');
+  const btnSubmitText = document.getElementById('btn-submit-text');
+  const btnSubmitSpinner = document.getElementById('btn-submit-spinner');
   const containerAlertPanelMain = document.getElementById('container-alert');
 
   formRssEl.addEventListener('submit', (e) => {
@@ -116,6 +118,8 @@ export default (config) => {
 
     if (stateProcess === 'filling' || stateProcess === 'finished') {
       inputUrlEl.disabled = false;
+      btnSubmitText.innerHTML = 'Add';
+      btnSubmitSpinner.classList.add('d-none');
     } else if (stateProcess === 'processed') {
       inputUrlEl.disabled = true;
     }
@@ -125,12 +129,15 @@ export default (config) => {
       formRssFeedBackEl.classList.remove('invalid-feedback');
       formRssFeedBackEl.innerHTML = '';
     } else if (stateProcess === 'finished' && errors.length > 0) {
-      console.log(state)
       formRssFeedBackEl.innerHTML = errors.join('; ');
       formRssFeedBackEl.classList.add('invalid-feedback');
     }
 
-    if (validationState === 'none') {
+    if (stateProcess === 'processed') {
+      btnSubmitText.innerHTML = 'Loading...';
+      btnSubmitSpinner.classList.remove('d-none');
+      btnSubmitEl.disabled = true;
+    } else if (validationState === 'none') {
       inputUrlEl.classList.remove('is-invalid');
       inputUrlEl.classList.remove('is-valid');
       btnSubmitEl.disabled = true;
