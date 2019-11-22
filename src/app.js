@@ -3,15 +3,20 @@ import isUrl from 'validator/lib/isURL';
 import { watch } from 'melanke-watchjs';
 import hash from 'hash.js';
 import rssFeeds from './components/rssFeeds';
-import rssParse from './rssParser';
+import buildRss from './rssBuilder';
 import Modal from './components/modal';
 import startFeedAutoUpdater from './rssFeedUpdater';
 import alert from './components/alertPanelMain';
 
 const issetFeed = (feeds, uid) => (feeds.filter((e) => (e.uid === uid)).length > 0);
-const modalCloseHandler = (state) => () => { state.showDescriptionFeedItem.show = false; };
+const modalCloseHandler = (state) => () => {
+  /* eslint-disable-next-line */
+  state.showDescriptionFeedItem.show = false;
+};
 const modalShowHandler = (state) => (data) => () => {
+  /* eslint-disable-next-line */
   state.showDescriptionFeedItem.show = true;
+  /* eslint-disable-next-line */
   state.showDescriptionFeedItem.data = data;
 };
 
@@ -28,6 +33,9 @@ export default (config) => {
       data: {},
     },
     feeds: [],
+    processAutoUpdateRssFeeds: {
+      failedUidsFeeds: [],
+    },
     failedFetchUidFeeds: [],
   };
   const bodyEl = document.querySelector('body');
@@ -62,7 +70,7 @@ export default (config) => {
         state.additionProcess.validationState = 'none';
         state.additionProcess.stateProcess = 'finished';
 
-        const rssFeed = rssParse(data);
+        const rssFeed = buildRss(data);
         rssFeed.uid = feedUid;
         rssFeed.url = rssUrl;
 
@@ -151,10 +159,10 @@ export default (config) => {
     rssFeeds(feeds, feedsContainerEl, { modalShow: modalShowHandler(state) });
   });
 
-  watch(state, 'failedFetchUidFeeds', () => {
-    const { failedFetchUidFeeds } = state;
-    if (failedFetchUidFeeds.length > 0) {
-      alert({ state, failedFetchUidFeeds, parentEl: containerAlertPanelMain });
+  watch(state, 'processAutoUpdateRssFeeds', () => {
+    const { failedUidsFeeds } = state.processAutoUpdateRssFeeds;
+    if (failedUidsFeeds.length > 0) {
+      alert({ state, parentEl: containerAlertPanelMain });
     }
   });
 };

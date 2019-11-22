@@ -1,5 +1,5 @@
 import axios from 'axios';
-import rssParser from './rssParser';
+import buildRss from './rssBuilder';
 
 const startInterval = 2000;
 const deltaInterval = 2000;
@@ -13,26 +13,30 @@ const getNewItemsFromFeed = (newItems, oldItems) => (
 const intervalFetch = (state, currentFeed, interval, proxyUrl) => {
   setTimeout(() => {
     const { url, uid } = currentFeed;
-    const { failedFetchUidFeeds } = state;
+    const { failedUidsFeeds } = state.processAutoUpdateRssFeeds;
 
     axios.get(`${proxyUrl}${url}`)
       .then(({ data }) => {
-        const newFeed = rssParser(data);
+        const newFeed = buildRss(data);
         const newItems = getNewItemsFromFeed(newFeed.items, currentFeed.items);
 
-        if (failedFetchUidFeeds.includes(uid)) {
-          state.failedFetchUidFeeds = failedFetchUidFeeds.filter((e) => (e !== uid));
+        if (failedUidsFeeds.includes(uid)) {
+          /* eslint-disable-next-line */
+          state.processAutoUpdateRssFeeds.failedUidsFeeds = failedUidsFeeds
+            .filter((e) => (e !== uid));
         }
 
         if (newItems.length > 0) {
+          /* eslint-disable-next-line */
           currentFeed.items = [...currentFeed.items, ...newItems];
         }
 
         intervalFetch(state, currentFeed, startInterval, proxyUrl);
       })
       .catch(() => {
-        if (!failedFetchUidFeeds.includes(uid)) {
-          state.failedFetchUidFeeds = [...failedFetchUidFeeds, uid];
+        if (!failedUidsFeeds.includes(uid)) {
+          /* eslint-disable-next-line */
+          state.processAutoUpdateRssFeeds.failedUidsFeeds = [...failedUidsFeeds, uid];
         }
 
         const newInterval = interval + deltaInterval;

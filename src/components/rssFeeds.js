@@ -16,6 +16,7 @@ const itemsBuilder = (items) => {
 
 export default (feeds, feedsContainer, handlers) => {
   const { modalShow } = handlers;
+  /* eslint-disable-next-line */
   feedsContainer.innerHTML = '';
   feeds
     .forEach(({ title, description, items }) => {
