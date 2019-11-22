@@ -79,6 +79,7 @@ export default (config) => {
       })
       .catch((error) => {
         state.additionProcess.stateProcess = 'finished';
+        state.additionProcess.validationState = 'invalid';
 
         if (error.response) {
           const { status } = error.response;
@@ -124,6 +125,7 @@ export default (config) => {
       formRssFeedBackEl.classList.remove('invalid-feedback');
       formRssFeedBackEl.innerHTML = '';
     } else if (stateProcess === 'finished' && errors.length > 0) {
+      console.log(state)
       formRssFeedBackEl.innerHTML = errors.join('; ');
       formRssFeedBackEl.classList.add('invalid-feedback');
     }
