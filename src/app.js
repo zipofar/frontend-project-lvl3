@@ -27,7 +27,7 @@ export default () => {
   const state = {
     additionProcess: {
       errors: [],
-      state: 'filling', // filling, processed, finished
+      state: 'filling', // filling, processed
       validationState: 'none', // none, invalid, valid
     },
     showDescriptionFeedItem: {
@@ -60,7 +60,7 @@ export default () => {
     const feedUid = hash.sha1().update(rssUrl).digest('hex');
 
     if (hasFeed(state.feeds, feedUid)) {
-      state.additionProcess.state = 'finished';
+      state.additionProcess.state = 'filling';
       state.additionProcess.validationState = 'invalid';
       state.additionProcess.errors = [
         ...state.additionProcess.errors,
@@ -72,7 +72,7 @@ export default () => {
     axios.get(`${proxyUrl}${rssUrl}`)
       .then(({ data }) => {
         state.additionProcess.validationState = 'none';
-        state.additionProcess.state = 'finished';
+        state.additionProcess.state = 'filling';
 
         const rssFeed = buildRss(data);
         rssFeed.uid = feedUid;
@@ -82,7 +82,7 @@ export default () => {
         startFeedAutoUpdater(state, feedUid, { proxyUrl });
       })
       .catch((error) => {
-        state.additionProcess.state = 'finished';
+        state.additionProcess.state = 'filling';
         state.additionProcess.validationState = 'invalid';
 
         if (error.response) {
@@ -111,35 +111,33 @@ export default () => {
     }
   });
 
-  watch(state, 'additionProcess', () => {
+  watch(state, 'additionProcess', (prop, action, newvalue, oldvalue) => {
     const {
       errors,
-      state: additionState,
       validationState,
     } = state.additionProcess;
 
-    if (additionState === 'filling' || additionState === 'finished') {
+    if (prop === 'state' && newvalue === 'filling' && oldvalue === 'processed') {
       inputUrlEl.disabled = false;
       btnSubmitText.innerHTML = 'Add';
       btnSubmitSpinner.classList.add('d-none');
-    } else if (additionState === 'processed') {
+    } else if (prop === 'state' && newvalue === 'processed' && oldvalue === 'filling') {
       inputUrlEl.disabled = true;
-    }
-
-    if (additionState === 'finished' && errors.length === 0) {
-      inputUrlEl.value = '';
-      formRssFeedBackEl.classList.remove('invalid-feedback');
-      formRssFeedBackEl.innerHTML = '';
-    } else if (additionState === 'finished' && errors.length > 0) {
-      formRssFeedBackEl.innerHTML = errors.join('; ');
-      formRssFeedBackEl.classList.add('invalid-feedback');
-    }
-
-    if (additionState === 'processed') {
       btnSubmitText.innerHTML = 'Loading...';
       btnSubmitSpinner.classList.remove('d-none');
       btnSubmitEl.disabled = true;
-    } else if (validationState === 'none') {
+
+      if (errors.length === 0) {
+        inputUrlEl.value = '';
+        formRssFeedBackEl.classList.remove('invalid-feedback');
+        formRssFeedBackEl.innerHTML = '';
+      } else if (errors.length > 0) {
+        formRssFeedBackEl.innerHTML = errors.join('; ');
+        formRssFeedBackEl.classList.add('invalid-feedback');
+      }
+    }
+
+    if (validationState === 'none') {
       inputUrlEl.classList.remove('is-invalid');
       inputUrlEl.classList.remove('is-valid');
       btnSubmitEl.disabled = true;
