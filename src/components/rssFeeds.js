@@ -1,3 +1,7 @@
+import { deepSanitize } from '../utils';
+
+/* eslint no-param-reassign: 0 */
+
 const itemsBuilder = (items) => {
   const list = items.map(({ title, link }) => (
     `
@@ -16,9 +20,9 @@ const itemsBuilder = (items) => {
 
 export default (feeds, feedsContainer, handlers) => {
   const { modalShow } = handlers;
-  /* eslint-disable-next-line */
   feedsContainer.innerHTML = '';
-  feeds
+  const sanitizedFeeds = feeds.map(deepSanitize);
+  sanitizedFeeds
     .forEach(({ title, description, items }) => {
       const feedBody = `
         <div class="col-sm-12">

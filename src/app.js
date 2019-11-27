@@ -8,24 +8,26 @@ import Modal from './components/modal';
 import startFeedAutoUpdater from './rssFeedUpdater';
 import alert from './components/alertPanelMain';
 
-const issetFeed = (feeds, uid) => (feeds.filter((e) => (e.uid === uid)).length > 0);
+/* eslint no-param-reassign: 0 */
+
+const config = {
+  proxyUrl: 'https://api.codetabs.com/v1/proxy?quest=',
+};
+const hasFeed = (feeds, uid) => (feeds.filter((e) => (e.uid === uid)).length > 0);
 const modalCloseHandler = (state) => () => {
-  /* eslint-disable-next-line */
   state.showDescriptionFeedItem.show = false;
 };
 const modalShowHandler = (state) => (data) => () => {
-  /* eslint-disable-next-line */
   state.showDescriptionFeedItem.show = true;
-  /* eslint-disable-next-line */
   state.showDescriptionFeedItem.data = data;
 };
 
-export default (config) => {
+export default () => {
   const { proxyUrl } = config;
   const state = {
     additionProcess: {
       errors: [],
-      stateProcess: 'filling', // filling, processed, finished
+      state: 'filling', // filling, processed, finished
       validationState: 'none', // none, invalid, valid
     },
     showDescriptionFeedItem: {
@@ -50,15 +52,15 @@ export default (config) => {
 
   formRssEl.addEventListener('submit', (e) => {
     e.preventDefault();
-    state.additionProcess.stateProcess = 'processed';
+    state.additionProcess.state = 'processed';
     state.additionProcess.errors = [];
 
     const formData = new FormData(formRssEl);
-    const rssUrl = formData.get('url').replace(/\/*$/, '');
+    const rssUrl = formData.get('url').trim();
     const feedUid = hash.sha1().update(rssUrl).digest('hex');
 
-    if (issetFeed(state.feeds, feedUid)) {
-      state.additionProcess.stateProcess = 'finished';
+    if (hasFeed(state.feeds, feedUid)) {
+      state.additionProcess.state = 'finished';
       state.additionProcess.validationState = 'invalid';
       state.additionProcess.errors = [
         ...state.additionProcess.errors,
@@ -70,7 +72,7 @@ export default (config) => {
     axios.get(`${proxyUrl}${rssUrl}`)
       .then(({ data }) => {
         state.additionProcess.validationState = 'none';
-        state.additionProcess.stateProcess = 'finished';
+        state.additionProcess.state = 'finished';
 
         const rssFeed = buildRss(data);
         rssFeed.uid = feedUid;
@@ -80,7 +82,7 @@ export default (config) => {
         startFeedAutoUpdater(state, feedUid, { proxyUrl });
       })
       .catch((error) => {
-        state.additionProcess.stateProcess = 'finished';
+        state.additionProcess.state = 'finished';
         state.additionProcess.validationState = 'invalid';
 
         if (error.response) {
@@ -99,7 +101,7 @@ export default (config) => {
   });
 
   inputUrlEl.addEventListener('input', ({ target: { value } }) => {
-    state.additionProcess.stateProcess = 'filling';
+    state.additionProcess.state = 'filling';
     if (isUrl(value)) {
       state.additionProcess.validationState = 'valid';
     } else if (value === '') {
@@ -112,28 +114,28 @@ export default (config) => {
   watch(state, 'additionProcess', () => {
     const {
       errors,
-      stateProcess,
+      state: additionState,
       validationState,
     } = state.additionProcess;
 
-    if (stateProcess === 'filling' || stateProcess === 'finished') {
+    if (additionState === 'filling' || additionState === 'finished') {
       inputUrlEl.disabled = false;
       btnSubmitText.innerHTML = 'Add';
       btnSubmitSpinner.classList.add('d-none');
-    } else if (stateProcess === 'processed') {
+    } else if (additionState === 'processed') {
       inputUrlEl.disabled = true;
     }
 
-    if (stateProcess === 'finished' && errors.length === 0) {
+    if (additionState === 'finished' && errors.length === 0) {
       inputUrlEl.value = '';
       formRssFeedBackEl.classList.remove('invalid-feedback');
       formRssFeedBackEl.innerHTML = '';
-    } else if (stateProcess === 'finished' && errors.length > 0) {
+    } else if (additionState === 'finished' && errors.length > 0) {
       formRssFeedBackEl.innerHTML = errors.join('; ');
       formRssFeedBackEl.classList.add('invalid-feedback');
     }
 
-    if (stateProcess === 'processed') {
+    if (additionState === 'processed') {
       btnSubmitText.innerHTML = 'Loading...';
       btnSubmitSpinner.classList.remove('d-none');
       btnSubmitEl.disabled = true;

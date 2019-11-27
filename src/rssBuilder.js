@@ -1,4 +1,3 @@
-import sanitizeHtml from 'sanitize-html';
 import hash from 'hash.js';
 
 export const parseRss = (xmlStr) => {
@@ -23,16 +22,6 @@ export const parseRss = (xmlStr) => {
   return rss;
 };
 
-export const deepSanitize = (obj) => (
-  Object.keys(obj).reduce((a, k) => {
-    const value = obj[k];
-    if (Array.isArray(value)) {
-      return { ...a, [k]: value.map((e) => (deepSanitize(e))) };
-    }
-    return { ...a, [k]: sanitizeHtml(value) };
-  }, {})
-);
-
 const setUidsToRssItems = (items) => (
   items.map((e) => (
     { ...e, uid: hash.sha1().update(e.link).digest('hex') }
@@ -41,6 +30,5 @@ const setUidsToRssItems = (items) => (
 
 export default (xmlStrRss) => {
   const parsedRss = parseRss(xmlStrRss);
-  const sanitizedRss = deepSanitize(parsedRss);
-  return { ...sanitizedRss, items: setUidsToRssItems(sanitizedRss.items) };
+  return { ...parsedRss, items: setUidsToRssItems(parsedRss.items) };
 };

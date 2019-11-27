@@ -1,6 +1,8 @@
 import axios from 'axios';
 import buildRss from './rssBuilder';
 
+/* eslint no-param-reassign: 0 */
+
 const startInterval = 2000;
 const deltaInterval = 2000;
 
@@ -21,13 +23,11 @@ const intervalFetch = (state, currentFeed, interval, proxyUrl) => {
         const newItems = getNewItemsFromFeed(newFeed.items, currentFeed.items);
 
         if (failedUidsFeeds.includes(uid)) {
-          /* eslint-disable-next-line */
           state.processAutoUpdateRssFeeds.failedUidsFeeds = failedUidsFeeds
             .filter((e) => (e !== uid));
         }
 
         if (newItems.length > 0) {
-          /* eslint-disable-next-line */
           currentFeed.items = [...currentFeed.items, ...newItems];
         }
 
@@ -35,7 +35,6 @@ const intervalFetch = (state, currentFeed, interval, proxyUrl) => {
       })
       .catch(() => {
         if (!failedUidsFeeds.includes(uid)) {
-          /* eslint-disable-next-line */
           state.processAutoUpdateRssFeeds.failedUidsFeeds = [...failedUidsFeeds, uid];
         }
 
