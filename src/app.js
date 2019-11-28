@@ -3,6 +3,7 @@ import isUrl from 'validator/lib/isURL';
 import { watch } from 'melanke-watchjs';
 import hash from 'hash.js';
 import i18next from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
 import rssFeeds from './components/rssFeeds';
 import buildRss from './rssBuilder';
 import Modal from './components/modal';
@@ -25,7 +26,10 @@ const modalShowHandler = (state) => (data) => () => {
 };
 
 export default () => {
-  i18next.init(i18Config);
+  i18next
+    .use(LanguageDetector)
+    .init(i18Config);
+
   const { proxyUrl } = config;
   const state = {
     additionProcess: {

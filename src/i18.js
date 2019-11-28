@@ -1,5 +1,4 @@
 export default {
-  lng: 'ru',
   resources: {
     en: {
       translation: {
