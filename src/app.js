@@ -2,11 +2,13 @@ import axios from 'axios';
 import isUrl from 'validator/lib/isURL';
 import { watch } from 'melanke-watchjs';
 import hash from 'hash.js';
+import i18next from 'i18next';
 import rssFeeds from './components/rssFeeds';
 import buildRss from './rssBuilder';
 import Modal from './components/modal';
 import startFeedAutoUpdater from './rssFeedUpdater';
 import alert from './components/alertPanelMain';
+import i18Config from './i18';
 
 /* eslint no-param-reassign: 0 */
 
@@ -23,6 +25,7 @@ const modalShowHandler = (state) => (data) => () => {
 };
 
 export default () => {
+  i18next.init(i18Config);
   const { proxyUrl } = config;
   const state = {
     additionProcess: {
@@ -40,6 +43,7 @@ export default () => {
     },
     failedFetchUidFeeds: [],
   };
+
   const bodyEl = document.querySelector('body');
   const feedsContainerEl = document.getElementById('feeds');
   const formRssEl = document.getElementById('form-rss');
@@ -132,7 +136,9 @@ export default () => {
         formRssFeedBackEl.classList.remove('invalid-feedback');
         formRssFeedBackEl.innerHTML = '';
       } else if (errors.length > 0) {
-        formRssFeedBackEl.innerHTML = errors.join('; ');
+        formRssFeedBackEl.innerHTML = errors
+          .map((e) => (i18next.t(e)))
+          .join('; ');
         formRssFeedBackEl.classList.add('invalid-feedback');
       }
     }
