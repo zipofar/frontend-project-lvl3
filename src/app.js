@@ -181,7 +181,7 @@ export default () => {
   watch(state, 'processAutoUpdateRssFeeds', () => {
     const { failedUidsFeeds } = state.processAutoUpdateRssFeeds;
     if (failedUidsFeeds.length > 0) {
-      alert({ state, parentEl: containerAlertPanelMain });
+      alert({ state, parentEl: containerAlertPanelMain, content: i18next.t('Failed feeds') });
     }
   });
 };

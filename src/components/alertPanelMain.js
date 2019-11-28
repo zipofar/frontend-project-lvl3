@@ -4,14 +4,14 @@ const buildListFailedFeeds = (feeds) => {
 };
 
 export default (props) => {
-  const { state, parentEl } = props;
+  const { state, parentEl, content } = props;
 
   const { feeds } = state;
   const { failedUidsFeeds } = state.processAutoUpdateRssFeeds;
   const failedFeeds = feeds.filter(({ uid }) => (failedUidsFeeds.includes(uid)));
   const alertBody = `
     <div class="alert alert-warning" id="alert-panel-main" role="alert">
-      <p>Failed Feeds</p>
+      <p>${content}</p>
       ${buildListFailedFeeds(failedFeeds)}
     </div>
   `;
