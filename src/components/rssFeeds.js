@@ -1,4 +1,4 @@
-import { deepSanitize } from '../utils';
+import escapeHtml from 'escape-html';
 
 /* eslint no-param-reassign: 0 */
 
@@ -6,8 +6,8 @@ const itemsBuilder = (items) => {
   const list = items.map(({ title, link }) => (
     `
     <li>
-      <a href='${link}'>
-        ${title}
+      <a href='${escapeHtml(link)}'>
+        ${escapeHtml(title)}
       </a>
       <button
         type="button"
@@ -21,36 +21,34 @@ const itemsBuilder = (items) => {
 export default (feeds, feedsContainer, handlers) => {
   const { modalShow } = handlers;
   feedsContainer.innerHTML = '';
-  const sanitizedFeeds = feeds.map(deepSanitize);
-  sanitizedFeeds
-    .forEach(({ title, description, items }) => {
-      const feedBody = `
-        <div class="col-sm-12">
-          <div class="card">
-            <div class="card-header">
-              ${title}
-            </div>
-            <div class="card-body">
-              <blockquote class="blockquote mb-0">
-                <p>${description}</p>
-                ${itemsBuilder(items, modalShow)}
-              </blockquote>
-            </div>
+  feeds.forEach(({ title, description, items }) => {
+    const feedBody = `
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            ${escapeHtml(title)}
+          </div>
+          <div class="card-body">
+            <blockquote class="blockquote mb-0">
+              <p>${escapeHtml(description)}</p>
+              ${itemsBuilder(items, modalShow)}
+            </blockquote>
           </div>
         </div>
-      `;
+      </div>
+    `;
 
-      const feedEl = document.createElement('div');
-      feedEl.setAttribute('class', 'row');
-      feedEl.innerHTML = feedBody;
-      let i = 0;
-      feedEl
-        .querySelectorAll('.btn-feed-item-show-modal')
-        .forEach((e) => {
-          e.addEventListener('click', modalShow(items[i]));
-          i += 1;
-        });
+    const feedEl = document.createElement('div');
+    feedEl.setAttribute('class', 'row');
+    feedEl.innerHTML = feedBody;
+    let i = 0;
+    feedEl
+      .querySelectorAll('.btn-feed-item-show-modal')
+      .forEach((e) => {
+        e.addEventListener('click', modalShow(items[i]));
+        i += 1;
+      });
 
-      feedsContainer.appendChild(feedEl);
-    });
+    feedsContainer.appendChild(feedEl);
+  });
 };
